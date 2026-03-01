@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Letterboxd Streaming Finder</title>
+
+<style>
+
+body{
+font-family:Arial;
+max-width:900px;
+margin:auto;
+padding:40px;
+}
+
+input,select,button{
+padding:10px;
+font-size:18px;
+margin:5px;
+}
+
+.service{
+margin-top:25px;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<h1>Letterboxd → Streaming Finder</h1>
+
+<p>
+Enter a Letterboxd username and select country.
+</p>
+
+
+<input id="username"
+placeholder="Letterboxd Username">
+
+
+<select id="country">
+
+<option value="US">United States</option>
+
+<option value="GB">United Kingdom</option>
+
+<option value="CA">Canada</option>
+
+<option value="AU">Australia</option>
+
+<option value="DE">Germany</option>
+
+<option value="FR">France</option>
+
+<option value="IT">Italy</option>
+
+<option value="ES">Spain</option>
+
+<option value="NL">Netherlands</option>
+
+<option value="SE">Sweden</option>
+
+<option value="BR">Brazil</option>
+
+<option value="IN">India</option>
+
+<option value="JP">Japan</option>
+
+<option value="KR">Korea</option>
+
+</select>
+
+
+<button onclick="search()">
+Find Streaming
+</button>
+
+
+<div id="results"></div>
+
+
+<script>
+
+
+async function search(){
+
+const username=
+document.getElementById("username").value;
+
+const country=
+document.getElementById("country").value;
+
+
+document.getElementById("results").innerHTML=
+"Loading watchlist...";
+
+
+const res=
+await fetch(
+`/api/watchlist?username=${username}&country=${country}`
+);
+
+
+const data=
+await res.json();
+
+let html="";
+
+
+for(let service in data){
+
+html+=`
+<div class="service">
+
+<h2>${service}</h2>
+
+<ul>
+`;
+
+data[service].forEach(movie=>{
+
+html+=`<li>${movie}</li>`;
+
+});
+
+html+="</ul></div>";
+
+}
+
+document.getElementById("results").innerHTML=
+html;
+
+}
+
+</script>
+
+
+</body>
+
+</html>
