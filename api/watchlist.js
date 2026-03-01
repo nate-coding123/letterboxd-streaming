@@ -2,25 +2,26 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 
 
-// GET WATCHLIST
 async function getWatchlist(username){
 
 let films=[];
-let page=1;
-let hasMore=true;
-
-while(hasMore){
-
-const url=
-`https://letterboxd.com/${username}/watchlist/page/${page}/`;
 
 try{
 
+const url=
+`https://letterboxd.com/${username}/watchlist/`;
+
 const response=
-await axios.get(url);
+await axios.get(url,{
+headers:{
+"User-Agent":
+"Mozilla/5.0"
+}
+});
 
 const $=
 cheerio.load(response.data);
+
 
 $(".poster-container").each((i,el)=>{
 
@@ -41,26 +42,20 @@ poster
 
 });
 
-if($(".next").length===0)
-hasMore=false;
 
-page++;
+}catch(e){
 
-}catch{
-
-hasMore=false;
+return [];
 
 }
 
-}
 
-return films;
+return films.slice(0,40);
 
 }
 
 
 
-// JUSTWATCH SEARCH
 async function getStreaming(title,country){
 
 try{
@@ -75,27 +70,22 @@ page_size:1
 );
 
 if(!res.data.items.length)
-return null;
+return [];
 
-
-const item=
-res.data.items[0];
 
 const offers=
-item.offers||[];
+res.data.items[0].offers||[];
 
-const services=
-offers.map(o=>o.package_short_name);
+return[
+...new Set(
+offers.map(o=>o.package_short_name)
+)
 
-return{
-
-services:[...new Set(services)],
-poster:item.poster
-};
+];
 
 }catch{
 
-return null;
+return [];
 
 }
 
@@ -103,7 +93,6 @@ return null;
 
 
 
-// MAIN API
 module.exports=async(req,res)=>{
 
 const username=
@@ -112,9 +101,10 @@ req.query.username;
 const country=
 req.query.country||"US";
 
+
 if(!username){
 
-res.status(400).json({
+res.json({
 error:"Missing username"
 });
 
@@ -127,6 +117,17 @@ const films=
 await getWatchlist(username);
 
 
+if(!films.length){
+
+res.json({
+error:
+"Username not found or watchlist empty"
+});
+
+return;
+
+}
+
 
 const results={};
 
@@ -136,52 +137,22 @@ await Promise.all(
 
 films.map(async film=>{
 
-const data=
+const services=
 await getStreaming(
 film.title,
 country
 );
 
 
-if(!data){
+const service=
+services[0]||"Not Streaming";
 
-if(!results["Not Streaming"])
-results["Not Streaming"]=[];
-
-results["Not Streaming"].push(film);
-
-return;
-
-}
-
-
-if(!data.services.length){
-
-if(!results["Not Streaming"])
-results["Not Streaming"]=[];
-
-results["Not Streaming"].push(film);
-
-return;
-
-}
-
-
-data.services.forEach(service=>{
 
 if(!results[service])
 results[service]=[];
 
-results[service].push({
 
-title:film.title,
-poster:
-film.poster ||
-`https://images.justwatch.com${data.poster}`
-
-});
-
-});
+results[service].push(film);
 
 })
 
