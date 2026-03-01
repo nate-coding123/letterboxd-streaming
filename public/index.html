@@ -9,20 +9,63 @@
 
 body{
 font-family:Arial;
-max-width:900px;
+max-width:1100px;
 margin:auto;
 padding:40px;
+background:#111;
+color:white;
 }
 
 input,select,button{
-padding:10px;
+
+padding:12px;
 font-size:18px;
 margin:5px;
+border-radius:6px;
+border:none;
+
 }
 
-.service{
-margin-top:25px;
+button{
+background:#00c030;
+color:white;
+cursor:pointer;
 }
+
+.grid{
+
+display:grid;
+grid-template-columns:
+repeat(auto-fill,150px);
+
+gap:15px;
+
+margin-top:20px;
+
+}
+
+
+.movie{
+
+text-align:center;
+
+}
+
+
+.movie img{
+
+width:150px;
+border-radius:8px;
+
+}
+
+
+.service{
+
+margin-top:40px;
+
+}
+
 
 </style>
 
@@ -31,14 +74,17 @@ margin-top:25px;
 
 <body>
 
-<h1>Letterboxd → Streaming Finder</h1>
+<h1>Letterboxd Streaming Finder</h1>
 
 <p>
-Enter a Letterboxd username and select country.
+
+Paste a Letterboxd username and pick country.
+
 </p>
 
 
-<input id="username"
+<input
+id="username"
 placeholder="Letterboxd Username">
 
 
@@ -76,7 +122,9 @@ placeholder="Letterboxd Username">
 
 
 <button onclick="search()">
+
 Find Streaming
+
 </button>
 
 
@@ -84,7 +132,6 @@ Find Streaming
 
 
 <script>
-
 
 async function search(){
 
@@ -96,7 +143,7 @@ document.getElementById("country").value;
 
 
 document.getElementById("results").innerHTML=
-"Loading watchlist...";
+"Searching watchlist...";
 
 
 const res=
@@ -108,6 +155,7 @@ await fetch(
 const data=
 await res.json();
 
+
 let html="";
 
 
@@ -118,23 +166,44 @@ html+=`
 
 <h2>${service}</h2>
 
-<ul>
+<div class="grid">
 `;
+
 
 data[service].forEach(movie=>{
 
-html+=`<li>${movie}</li>`;
+html+=`
+
+<div class="movie">
+
+<img src="${movie.poster}">
+
+<br>
+
+${movie.title}
+
+</div>
+
+`;
 
 });
 
-html+="</ul></div>";
+
+html+=`
+
+</div>
+</div>
+
+`;
 
 }
+
 
 document.getElementById("results").innerHTML=
 html;
 
 }
+
 
 </script>
 
