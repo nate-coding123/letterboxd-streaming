@@ -2,6 +2,7 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 
 
+// GET WATCHLIST
 async function getWatchlist(username){
 
 let films=[];
@@ -21,14 +22,22 @@ await axios.get(url);
 const $=
 cheerio.load(response.data);
 
-
 $(".poster-container").each((i,el)=>{
 
 const title=
 $(el).find("img").attr("alt");
 
-if(title)
-films.push(title);
+const poster=
+$(el).find("img").attr("src");
+
+if(title){
+
+films.push({
+title,
+poster
+});
+
+}
 
 });
 
@@ -51,6 +60,7 @@ return films;
 
 
 
+// JUSTWATCH SEARCH
 async function getStreaming(title,country){
 
 try{
@@ -65,21 +75,27 @@ page_size:1
 );
 
 if(!res.data.items.length)
-return [];
+return null;
 
+
+const item=
+res.data.items[0];
 
 const offers=
-res.data.items[0].offers||[];
-
+item.offers||[];
 
 const services=
 offers.map(o=>o.package_short_name);
 
-return [...new Set(services)];
+return{
+
+services:[...new Set(services)],
+poster:item.poster
+};
 
 }catch{
 
-return [];
+return null;
 
 }
 
@@ -87,6 +103,7 @@ return [];
 
 
 
+// MAIN API
 module.exports=async(req,res)=>{
 
 const username=
@@ -102,6 +119,7 @@ error:"Missing username"
 });
 
 return;
+
 }
 
 
@@ -109,37 +127,65 @@ const films=
 await getWatchlist(username);
 
 
-let results={};
+
+const results={};
 
 
-for(let film of films){
 
-const services=
-await getStreaming(film,country);
+await Promise.all(
+
+films.map(async film=>{
+
+const data=
+await getStreaming(
+film.title,
+country
+);
 
 
-if(!services.length){
+if(!data){
 
 if(!results["Not Streaming"])
 results["Not Streaming"]=[];
 
 results["Not Streaming"].push(film);
 
-}
-else{
+return;
 
-services.forEach(service=>{
+}
+
+
+if(!data.services.length){
+
+if(!results["Not Streaming"])
+results["Not Streaming"]=[];
+
+results["Not Streaming"].push(film);
+
+return;
+
+}
+
+
+data.services.forEach(service=>{
 
 if(!results[service])
 results[service]=[];
 
-results[service].push(film);
+results[service].push({
+
+title:film.title,
+poster:
+film.poster ||
+`https://images.justwatch.com${data.poster}`
 
 });
 
-}
+});
 
-}
+})
+
+);
 
 
 res.json(results);
